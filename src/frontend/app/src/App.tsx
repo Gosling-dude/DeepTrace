@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 // We will implement components in the next step
 import UploadCard from './components/UploadCard';
 import ResultCard from './components/ResultCard';
