@@ -14,8 +14,9 @@ function App() {
         formData.append('explain', 'true');
 
         try {
-            // Pointing to local backend, in prod this would be '/api/v1/...'
-            const res = await fetch('http://localhost:8000/api/v1/image/predict', {
+            // Use environment variable for production API URL, fallback to localhost for dev
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+            const res = await fetch(`${API_URL}/api/v1/image/predict`, {
                 method: 'POST',
                 body: formData,
             });
