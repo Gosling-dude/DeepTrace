@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ../
+      dockerfile: src/backend/Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../experiments:/app/experiments
+    environment:
+      - PYTHONUNBUFFERED=1
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/api/v1/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  frontend:
+    build:
+      context: ../src/frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      backend:
+        condition: service_healthy
