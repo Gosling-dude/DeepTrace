@@ -15,13 +15,13 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install python dependencies targeting CPU (to keep image size small for MVP)
-COPY requirements.txt .
+COPY src/backend/requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu && \
     pip install --no-cache-dir -r requirements.txt
 
 # Copy backend source
-COPY . /app/src/backend/
+COPY src/backend/ /app/src/backend/
 
 # Use the $PORT environment variable, falling back to 8000 if not set
 ENV PORT=8000
