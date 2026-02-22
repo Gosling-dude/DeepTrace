@@ -23,6 +23,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Copy backend source
 COPY . /app/src/backend/
 
-# By default, run the FastAPI server
-EXPOSE 8000
-CMD ["uvicorn", "src.backend.app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Use the $PORT environment variable, falling back to 8000 if not set
+ENV PORT=8000
+EXPOSE $PORT
+CMD uvicorn src.backend.app.main:app --host 0.0.0.0 --port $PORT
