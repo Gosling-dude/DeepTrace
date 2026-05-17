@@ -1,6 +1,22 @@
 version: '3.8'
 
 services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: deeptrace
+      POSTGRES_PASSWORD: deeptrace_dev
+      POSTGRES_DB: deeptrace
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U deeptrace"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   backend:
     build:
       context: ../
@@ -9,10 +25,21 @@ services:
       - "8000:8000"
     volumes:
       - ../experiments:/app/experiments
+      - ../uploads:/app/uploads
     environment:
       - PYTHONUNBUFFERED=1
+      - DATABASE_URL=postgresql://deeptrace:deeptrace_dev@db:5432/deeptrace
+      - JWT_SECRET_KEY=docker-dev-secret-change-in-prod
+      - APP_ENV=development
+      - FRONTEND_URL=http://localhost:3000
+      - UPLOAD_DIR=/app/uploads
+      - ADMIN_EMAIL=admin@deeptrace.ai
+      - ADMIN_PASSWORD=changeme123
+    depends_on:
+      db:
+        condition: service_healthy
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8000/api/v1/health" ]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -26,3 +53,6 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+
+volumes:
+  pgdata:

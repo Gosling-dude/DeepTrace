@@ -1,0 +1,47 @@
+name: Docker Deployment Validation
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  docker-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare Environment Variables
+        run: |
+          cp .env.development .env
+
+      - name: Build Docker Compose Stack
+        working-directory: infra
+        run: docker-compose build
+
+      - name: Start Docker Compose Stack
+        working-directory: infra
+        run: docker-compose up -d
+
+      - name: Wait for Backend Health Check
+        run: |
+          echo "Waiting for FastAPI to become healthy..."
+          timeout 30s bash -c 'until curl -s http://localhost:8000/api/v1/health | grep -q "\"status\":\"ok\""; do sleep 2; done'
+          echo "Backend is healthy!"
+
+      - name: Wait for Frontend Check
+        run: |
+          echo "Waiting for Frontend to respond..."
+          timeout 30s bash -c 'until curl -s http://localhost:3000 | grep -q "DeepTrace"; do sleep 2; done'
+          echo "Frontend is healthy!"
+
+      - name: Check Container Logs (on failure)
+        if: failure()
+        working-directory: infra
+        run: docker-compose logs
+
+      - name: Tear down
+        if: always()
+        working-directory: infra
+        run: docker-compose down -v
