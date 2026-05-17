@@ -1,0 +1,9 @@
+[project]
+name = "deeptrace-backend"
+version = "1.0.0"
+description = "DeepTrace — AI-Generated Image Detection Platform"
+requires-python = ">=3.10"
+
+[tool.pytest.ini_options]
+testpaths = ["src/backend/tests"]
+pythonpath = ["."]
