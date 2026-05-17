@@ -2,9 +2,8 @@
 FROM node:20-alpine AS builder
 
 WORKDIR /app
-COPY app/package.json ./
-# Need to create lock file if absent, or use npm install directly
-RUN npm install
+COPY app/package.json app/package-lock.json ./
+RUN npm ci
 
 COPY app/ ./
 RUN npm run build
