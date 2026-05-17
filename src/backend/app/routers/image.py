@@ -20,7 +20,12 @@ logger = logging.getLogger("DeepTrace.image.router")
 router = APIRouter(prefix="/api/v1/image", tags=["Image Detection"])
 
 
-@router.post("/predict", response_model=InferenceResult)
+@router.post("/predict", response_model=InferenceResult, responses={
+    400: {"description": "Invalid image format or inference error"},
+    401: {"description": "Not authenticated"},
+    422: {"description": "Validation Error"},
+    500: {"description": "Internal server error during prediction"}
+})
 async def predict_image(
     file: UploadFile = File(...),
     explain: bool = Form(True),
@@ -135,7 +140,11 @@ async def get_prediction_history(
     )
 
 
-@router.get("/history/{prediction_id}", response_model=InferenceResult)
+@router.get("/history/{prediction_id}", response_model=InferenceResult, responses={
+    401: {"description": "Not authenticated"},
+    403: {"description": "Not authorized to view this prediction"},
+    404: {"description": "Prediction not found"}
+})
 async def get_prediction_detail(
     prediction_id: str,
     current_user: User = Depends(get_current_user),
@@ -181,7 +190,11 @@ async def get_prediction_detail(
     )
 
 
-@router.delete("/history/{prediction_id}", response_model=MessageResponse)
+@router.delete("/history/{prediction_id}", response_model=MessageResponse, responses={
+    401: {"description": "Not authenticated"},
+    403: {"description": "Not authorized to delete this prediction"},
+    404: {"description": "Prediction not found"}
+})
 async def delete_prediction(
     prediction_id: str,
     current_user: User = Depends(get_current_user),

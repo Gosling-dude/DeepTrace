@@ -26,7 +26,14 @@ from ...models.db_models import User
 
 logger = logging.getLogger("DeepTrace.admin.router")
 
-router = APIRouter(prefix="/api/v1/admin", tags=["Admin"])
+router = APIRouter(
+    prefix="/api/v1/admin",
+    tags=["Admin"],
+    responses={
+        401: {"description": "Not authenticated"},
+        403: {"description": "Not authorized (Admin only)"}
+    }
+)
 
 
 @router.get("/stats", response_model=PlatformStats)

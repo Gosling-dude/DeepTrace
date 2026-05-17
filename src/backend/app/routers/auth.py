@@ -29,7 +29,10 @@ logger = logging.getLogger("DeepTrace.auth.router")
 router = APIRouter(prefix="/api/v1/auth", tags=["Authentication"])
 
 
-@router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED, responses={
+    409: {"description": "Email already registered"},
+    422: {"description": "Validation Error"}
+})
 async def register(body: RegisterRequest, request: Request, db: Session = Depends(get_db)):
     """Create a new user account and return auth tokens."""
     try:
@@ -46,7 +49,10 @@ async def register(body: RegisterRequest, request: Request, db: Session = Depend
     return tokens
 
 
-@router.post("/login", response_model=TokenResponse)
+@router.post("/login", response_model=TokenResponse, responses={
+    401: {"description": "Invalid email or password"},
+    422: {"description": "Validation Error"}
+})
 async def login(body: LoginRequest, request: Request, db: Session = Depends(get_db)):
     """Authenticate with email + password and receive JWT tokens."""
     user = authenticate_user(db, body.email, body.password)
@@ -64,7 +70,10 @@ async def login(body: LoginRequest, request: Request, db: Session = Depends(get_
     return tokens
 
 
-@router.post("/refresh", response_model=TokenResponse)
+@router.post("/refresh", response_model=TokenResponse, responses={
+    401: {"description": "Invalid or expired refresh token"},
+    422: {"description": "Validation Error"}
+})
 async def refresh_token(body: RefreshRequest, db: Session = Depends(get_db)):
     """Exchange a valid refresh token for new access + refresh tokens."""
     payload = verify_token(body.refresh_token, expected_type="refresh")

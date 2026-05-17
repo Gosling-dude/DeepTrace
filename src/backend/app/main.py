@@ -100,8 +100,10 @@ cors_origins = [settings.FRONTEND_URL]
 if settings.APP_ENV == "development":
     cors_origins.append("http://localhost:3000")
     cors_origins.append("http://localhost:5173")
+    cors_origins.append("http://localhost:5174")
     cors_origins.append("http://127.0.0.1:3000")
     cors_origins.append("http://127.0.0.1:5173")
+    cors_origins.append("http://127.0.0.1:5174")
 
 app.add_middleware(
     CORSMiddleware,
