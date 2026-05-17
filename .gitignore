@@ -25,12 +25,38 @@ env/
 env.bak/
 venv.bak/
 
+# Environment files (keep .env.example only)
+.env.development
+.env.production
+.env.test
+
 # Logs and databases
 experiments/
 logs/
 *.log
 *.sqlite
 *.db
+deeptrace.db
 
 # OS generated files
 Thumbs.db
+
+# Uploads (user-generated content)
+uploads/
+test_uploads/
+
+# Build artifacts
+*.egg-info/
+build/
+
+# Test / cache artifacts
+.pytest_cache/
+
+# Sample test images (large files)
+testing/
+
+# ML model weights (downloaded, not committed)
+src/backend/models/weights/
+models/weights/
+*.pt
+*.onnx
