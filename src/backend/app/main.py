@@ -1,90 +1,123 @@
-import time
-import uuid
+"""
+DeepTrace API — Main Application Entry Point.
+
+Production-ready FastAPI application with:
+- JWT authentication
+- Role-based access control
+- Rate limiting
+- Security headers
+- Structured logging
+- Database initialization
+- Admin seed on first run
+"""
+
 import logging
-from datetime import datetime
-from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Depends
+import os
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 
-from .schemas import InferenceResult, ModelStatusResponse
+from .config import get_settings
+from .database import init_db, SessionLocal
+from .middleware import (
+    SecurityHeadersMiddleware,
+    RequestLoggingMiddleware,
+    setup_rate_limiter,
+)
+from .routers import auth, image, admin, health
 
-# Setup simple structured logger for the MVP
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-logger = logging.getLogger("DeepTraceBackend")
+# ─── Logging Setup ───────────────────────────────────────
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s │ %(name)-28s │ %(levelname)-7s │ %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+logger = logging.getLogger("DeepTrace")
+
+settings = get_settings()
+
+
+# ─── Lifespan (startup/shutdown) ─────────────────────────
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application startup and shutdown logic."""
+    logger.info(f"🚀 Starting {settings.APP_NAME} v{settings.APP_VERSION} ({settings.APP_ENV})")
+
+    # Initialize database tables
+    init_db()
+    logger.info("✅ Database initialized")
+
+    # Ensure upload directory exists
+    os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
+
+    # Seed admin user on first run
+    _seed_admin_user()
+
+    yield
+
+    logger.info(f"🛑 Shutting down {settings.APP_NAME}")
+
+
+def _seed_admin_user():
+    """Create the default admin user if it doesn't exist."""
+    from ..services.auth_service import register_user
+    from ..models.db_models import User
+
+    db = SessionLocal()
+    try:
+        existing = db.query(User).filter(User.email == settings.ADMIN_EMAIL.lower()).first()
+        if not existing:
+            register_user(
+                db,
+                email=settings.ADMIN_EMAIL,
+                password=settings.ADMIN_PASSWORD,
+                full_name=settings.ADMIN_NAME,
+                role="admin",
+            )
+            logger.info(f"✅ Admin user seeded: {settings.ADMIN_EMAIL}")
+        else:
+            logger.info(f"ℹ️  Admin user already exists: {settings.ADMIN_EMAIL}")
+    except Exception as e:
+        logger.error(f"Failed to seed admin: {e}")
+    finally:
+        db.close()
+
+
+# ─── App Factory ─────────────────────────────────────────
 
 app = FastAPI(
     title="DeepTrace API",
-    description="Backend API for AI Image Detection MVP",
-    version="0.3.0"
+    description="AI-Generated Image Detection Platform with Explainability",
+    version=settings.APP_VERSION,
+    lifespan=lifespan,
+    docs_url="/docs" if settings.DEBUG else None,
+    redoc_url="/redoc" if settings.DEBUG else None,
 )
 
-# CORS config
+# ─── CORS ────────────────────────────────────────────────
+cors_origins = [settings.FRONTEND_URL]
+if settings.APP_ENV == "development":
+    cors_origins.append("http://localhost:3000")
+    cors_origins.append("http://localhost:5173")
+    cors_origins.append("http://127.0.0.1:3000")
+    cors_origins.append("http://127.0.0.1:5173")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # In prod, restrict to frontend domain
+    allow_origins=cors_origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 
-# Global startup state for models (mock loaded timestamp)
-STARTUP_TIME = datetime.utcnow().isoformat()
+# ─── Custom Middleware ───────────────────────────────────
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(RequestLoggingMiddleware)
+setup_rate_limiter(app)
 
-# Placeholders for actual inference logic, we'll implement these next
-def perform_inference(image_bytes: bytes, explain: bool):
-    # This will be replaced by the actual model ensemble logic
-    from ..services.inference import run_prediction
-    return run_prediction(image_bytes, explain)
-
-@app.get("/api/v1/health")
-async def health_check():
-    """Readiness and liveness probe."""
-    return {"status": "ok", "service": "DeepTrace Model Backend"}
-
-@app.get("/api/v1/model/status", response_model=ModelStatusResponse)
-async def get_model_status():
-    """Returns details about the actively loaded model and device context."""
-    # In full implementation, determine PyTorch/CUDA device dynamically
-    return ModelStatusResponse(
-        model_name="deep_trace_hybrid_ensemble",
-        version="v0.3.0",
-        loaded_timestamp=STARTUP_TIME,
-        device="cpu", # hardcoded for MVP docker
-        is_ready=True
-    )
-
-@app.post("/api/v1/image/predict", response_model=InferenceResult)
-async def predict_image(file: UploadFile = File(...), explain: bool = Form(False)):
-    """
-    Main single-image detection endpoint.
-    Expects multipart/form-data.
-    """
-    start_time = time.time()
-    if not file.content_type.startswith("image/"):
-        raise HTTPException(status_code=400, detail="Invalid file type. Please upload an image.")
-    
-    try:
-        contents = await file.read()
-        
-        # Run inference
-        result_dict = perform_inference(contents, explain)
-        
-        end_time = time.time()
-        inference_ms = int((end_time - start_time) * 1000)
-        
-        # Construct and validate response schema
-        inference_result = InferenceResult(
-            id=str(uuid.uuid4()),
-            is_ai_generated=result_dict["is_ai_generated"],
-            confidence=result_dict["confidence"],
-            model_version="v0.3.0",
-            scores=result_dict["scores"],
-            explanation=result_dict["explanation"],
-            warnings=result_dict.get("warnings", []),
-            inference_ms=inference_ms
-        )
-        return inference_result
-
-    except Exception as e:
-        logger.error(f"Prediction failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+# ─── Register Routers ───────────────────────────────────
+app.include_router(health.router)
+app.include_router(auth.router)
+app.include_router(image.router)
+app.include_router(admin.router)

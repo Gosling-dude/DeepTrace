@@ -23,6 +23,12 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Copy backend source
 COPY src/backend/ /app/src/backend/
 
+# Create a non-root user for security
+RUN adduser --disabled-password --gecos "" appuser && \
+    mkdir -p /app/uploads /app/models/weights && \
+    chown -R appuser:appuser /app
+USER appuser
+
 # Use the $PORT environment variable, falling back to 8000 if not set
 ENV PORT=8000
 EXPOSE $PORT

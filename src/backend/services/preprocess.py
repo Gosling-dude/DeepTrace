@@ -60,12 +60,23 @@ def compute_frequency_spectrum(image: Image.Image) -> np.ndarray:
     
     return mag_uint8
 
-def get_base64_from_array(arr: np.ndarray, colormap=cv2.COLORMAP_JET) -> str:
-    """Apply a colormap to a grayscale array and encode to base64 PNG."""
+def get_base64_from_array(arr: np.ndarray, colormap=None) -> str:
+    """Convert a numpy array to a base64-encoded PNG string.
+    
+    Args:
+        arr: Image array. If 2D (grayscale) and colormap is provided, applies the colormap.
+             If 3D, assumes RGB and converts to BGR for cv2 encoding.
+        colormap: OpenCV colormap constant (e.g. cv2.COLORMAP_JET). Only applied to 2D arrays.
+    """
     if len(arr.shape) == 2:
-        heatmap = cv2.applyColorMap(arr, colormap)
+        # Grayscale — apply colormap if requested
+        if colormap is not None:
+            heatmap = cv2.applyColorMap(arr, colormap)
+        else:
+            heatmap = cv2.cvtColor(arr, cv2.COLOR_GRAY2BGR)
     else:
-        heatmap = arr
+        # RGB input — convert to BGR for cv2
+        heatmap = cv2.cvtColor(arr, cv2.COLOR_RGB2BGR)
         
     _, buffer = cv2.imencode('.png', heatmap)
     base64_str = base64.b64encode(buffer).decode('utf-8')
