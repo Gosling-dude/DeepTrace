@@ -9,6 +9,8 @@ python-multipart>=0.0.9
 sqlalchemy>=2.0.30
 alembic>=1.13.1
 aiosqlite>=0.20.0
+psycopg2-binary>=2.9.9
+
 
 # Auth
 passlib[bcrypt]>=1.7.4
