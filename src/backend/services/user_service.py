@@ -5,7 +5,7 @@ User management service: profile updates, deletion, admin queries.
 import logging
 from datetime import datetime, timezone, timedelta
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, case
 
 from ..models.db_models import User
 from .auth_service import hash_password
@@ -77,19 +77,29 @@ def list_users(db: Session, page: int = 1, per_page: int = 20, search: str | Non
     return users, total
 
 
-def count_active_users(db: Session, since: datetime) -> int:
-    return db.query(User).filter(User.last_login >= since, User.is_active == True).count()
-
-
 def get_user_stats(db: Session) -> dict:
     now = datetime.now(timezone.utc)
-    total = db.query(User).count()
-    today = count_active_users(db, now - timedelta(days=1))
-    week = count_active_users(db, now - timedelta(weeks=1))
-    month = count_active_users(db, now - timedelta(days=30))
+    day_ago = now - timedelta(days=1)
+    week_ago = now - timedelta(weeks=1)
+    month_ago = now - timedelta(days=30)
+
+    row = db.query(
+        func.count(User.id).label("total"),
+        func.count(case((
+            (User.last_login >= day_ago) & (User.is_active == True), 1
+        ))).label("today"),
+        func.count(case((
+            (User.last_login >= week_ago) & (User.is_active == True), 1
+        ))).label("week"),
+        func.count(case((
+            (User.last_login >= month_ago) & (User.is_active == True), 1
+        ))).label("month"),
+    ).first()
+
     return {
-        "total_users": total,
-        "active_users_today": today,
-        "active_users_week": week,
-        "active_users_month": month,
+        "total_users": row.total if row else 0,
+        "active_users_today": row.today if row else 0,
+        "active_users_week": row.week if row else 0,
+        "active_users_month": row.month if row else 0,
     }
+
