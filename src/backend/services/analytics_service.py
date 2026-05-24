@@ -2,15 +2,16 @@
 Analytics event tracking service.
 Records user actions and computes aggregate statistics.
 
-Performance note: All trend queries use single GROUP BY aggregations
-instead of per-day loops to minimize database round-trips — critical
-for serverless databases like Neon where each query has ~80ms latency.
+Performance: All trend queries fetch minimal data in a single query
+and aggregate in Python — avoids per-day loops and database-specific
+SQL functions for maximum compatibility and speed.
 """
 
 import logging
-from datetime import datetime, timezone, timedelta, date
+from datetime import datetime, timezone, timedelta
+from collections import defaultdict
 from sqlalchemy.orm import Session
-from sqlalchemy import func, case, cast, Date
+from sqlalchemy import func
 
 from ..models.db_models import AnalyticsEvent, Prediction, Upload, User, generate_uuid
 
@@ -35,167 +36,157 @@ def track_event(
 
 
 def get_prediction_stats(db: Session) -> dict:
-    """Compute aggregate prediction statistics in a single query."""
-    row = db.query(
-        func.count(Prediction.id).label("total"),
-        func.count(case((Prediction.is_ai_generated == True, 1))).label("ai_count"),
-        func.coalesce(func.avg(Prediction.confidence), 0.0).label("avg_conf"),
-        func.coalesce(func.avg(Prediction.inference_ms), 0.0).label("avg_ms"),
-    ).first()
+    """Compute aggregate prediction statistics."""
+    total = db.query(func.count(Prediction.id)).scalar() or 0
 
-    total = row.total if row else 0
-    ai_count = row.ai_count if row else 0
-    avg_conf = float(row.avg_conf) if row else 0.0
-    avg_ms = float(row.avg_ms) if row else 0.0
+    if total == 0:
+        return {
+            "total_predictions": 0,
+            "ai_detected_count": 0,
+            "real_detected_count": 0,
+            "avg_confidence": 0.0,
+            "avg_inference_ms": 0.0,
+            "total_uploads": db.query(func.count(Upload.id)).scalar() or 0,
+        }
 
+    ai_count = db.query(func.count(Prediction.id)).filter(
+        Prediction.is_ai_generated == True
+    ).scalar() or 0
+
+    avg_conf = db.query(func.avg(Prediction.confidence)).scalar() or 0.0
+    avg_ms = db.query(func.avg(Prediction.inference_ms)).scalar() or 0.0
     total_uploads = db.query(func.count(Upload.id)).scalar() or 0
 
     return {
         "total_predictions": total,
         "ai_detected_count": ai_count,
         "real_detected_count": total - ai_count,
-        "avg_confidence": round(avg_conf, 4),
-        "avg_inference_ms": round(avg_ms, 1),
+        "avg_confidence": round(float(avg_conf), 4),
+        "avg_inference_ms": round(float(avg_ms), 1),
         "total_uploads": total_uploads,
     }
 
 
 def get_error_rate(db: Session) -> float:
-    """Calculate error rate from analytics events in a single query."""
+    """Calculate error rate from analytics events."""
     now = datetime.now(timezone.utc)
     since = now - timedelta(days=30)
 
-    row = db.query(
-        func.count(case((AnalyticsEvent.event_type == "prediction_request", 1))).label("total"),
-        func.count(case((AnalyticsEvent.event_type == "prediction_error", 1))).label("errors"),
-    ).filter(
+    total_requests = db.query(func.count(AnalyticsEvent.id)).filter(
+        AnalyticsEvent.event_type == "prediction_request",
         AnalyticsEvent.created_at >= since,
-        AnalyticsEvent.event_type.in_(["prediction_request", "prediction_error"]),
-    ).first()
+    ).scalar() or 0
 
-    total = row.total if row else 0
-    errors = row.errors if row else 0
+    error_requests = db.query(func.count(AnalyticsEvent.id)).filter(
+        AnalyticsEvent.event_type == "prediction_error",
+        AnalyticsEvent.created_at >= since,
+    ).scalar() or 0
 
-    if total == 0:
+    if total_requests == 0:
         return 0.0
-    return round(errors / total, 4)
+    return round(error_requests / total_requests, 4)
 
 
-def _build_date_range(days: int) -> dict[str, int]:
-    """Build a zero-filled date dictionary for the last N days."""
+def _build_empty_date_range(days: int) -> list[str]:
+    """Build a sorted list of date strings for the last N days."""
     today = datetime.now(timezone.utc).date()
     start = today - timedelta(days=days - 1)
-    return {
-        (start + timedelta(days=i)).isoformat(): 0
-        for i in range(days)
-    }
+    return [(start + timedelta(days=i)).isoformat() for i in range(days)]
 
 
 def get_daily_predictions(db: Session, days: int = 30) -> list[dict]:
-    """Get prediction count per day using a single GROUP BY query."""
+    """Get prediction count per day — single query, Python aggregation."""
     now = datetime.now(timezone.utc)
     since = (now - timedelta(days=days - 1)).replace(hour=0, minute=0, second=0, microsecond=0)
 
-    date_map = _build_date_range(days)
-
+    # Single query: fetch only the created_at timestamps
     rows = (
-        db.query(
-            cast(Prediction.created_at, Date).label("day"),
-            func.count(Prediction.id).label("cnt"),
-        )
+        db.query(Prediction.created_at)
         .filter(Prediction.created_at >= since)
-        .group_by("day")
         .all()
     )
 
-    for row in rows:
-        day_str = row.day.isoformat() if isinstance(row.day, date) else str(row.day)
-        if day_str in date_map:
-            date_map[day_str] = row.cnt
+    # Aggregate by day in Python
+    counts = defaultdict(int)
+    for (created_at,) in rows:
+        if created_at:
+            day_str = created_at.strftime("%Y-%m-%d")
+            counts[day_str] += 1
 
-    return [{"date": d, "count": c} for d, c in date_map.items()]
+    # Build zero-filled result
+    dates = _build_empty_date_range(days)
+    return [{"date": d, "count": counts.get(d, 0)} for d in dates]
 
 
 def get_daily_signups(db: Session, days: int = 30) -> list[dict]:
-    """Get user signup count per day using a single GROUP BY query."""
+    """Get user signup count per day — single query, Python aggregation."""
     now = datetime.now(timezone.utc)
     since = (now - timedelta(days=days - 1)).replace(hour=0, minute=0, second=0, microsecond=0)
 
-    date_map = _build_date_range(days)
-
     rows = (
-        db.query(
-            cast(User.created_at, Date).label("day"),
-            func.count(User.id).label("cnt"),
-        )
+        db.query(User.created_at)
         .filter(User.created_at >= since)
-        .group_by("day")
         .all()
     )
 
-    for row in rows:
-        day_str = row.day.isoformat() if isinstance(row.day, date) else str(row.day)
-        if day_str in date_map:
-            date_map[day_str] = row.cnt
+    counts = defaultdict(int)
+    for (created_at,) in rows:
+        if created_at:
+            day_str = created_at.strftime("%Y-%m-%d")
+            counts[day_str] += 1
 
-    return [{"date": d, "count": c} for d, c in date_map.items()]
+    dates = _build_empty_date_range(days)
+    return [{"date": d, "count": counts.get(d, 0)} for d in dates]
 
 
 def get_confidence_distribution(db: Session) -> list[dict]:
-    """Get histogram bins of confidence scores in a single query."""
+    """Get histogram bins of confidence scores — single query, Python binning."""
+    rows = db.query(Prediction.confidence).all()
+
     bins = [
         (0.5, 0.6), (0.6, 0.7), (0.7, 0.8), (0.8, 0.9), (0.9, 1.01),
     ]
+    bin_counts = [0] * len(bins)
 
-    # Build all bins in a single query using CASE expressions
-    cases = []
-    for low, high in bins:
-        cases.append(
-            func.count(case(
-                (
-                    (Prediction.confidence >= low) & (Prediction.confidence < high),
-                    1,
-                )
-            )).label(f"bin_{int(low*10)}")
-        )
+    for (conf,) in rows:
+        if conf is not None:
+            for i, (low, high) in enumerate(bins):
+                if low <= conf < high:
+                    bin_counts[i] += 1
+                    break
 
-    row = db.query(*cases).first()
-
-    result = []
-    for i, (low, high) in enumerate(bins):
-        count = getattr(row, f"bin_{int(low*10)}", 0) if row else 0
-        result.append({"range": f"{low:.1f}-{high:.1f}", "count": count})
-    return result
+    return [
+        {"range": f"{low:.1f}-{high:.1f}", "count": bin_counts[i]}
+        for i, (low, high) in enumerate(bins)
+    ]
 
 
 def get_ai_vs_real_trend(db: Session, days: int = 30) -> list[dict]:
-    """AI vs Real detections per day using a single GROUP BY query."""
+    """AI vs Real detections per day — single query, Python aggregation."""
     now = datetime.now(timezone.utc)
     since = (now - timedelta(days=days - 1)).replace(hour=0, minute=0, second=0, microsecond=0)
 
-    date_map_ai = _build_date_range(days)
-    date_map_real = _build_date_range(days)
-
     rows = (
-        db.query(
-            cast(Prediction.created_at, Date).label("day"),
-            func.count(case((Prediction.is_ai_generated == True, 1))).label("ai"),
-            func.count(case((Prediction.is_ai_generated == False, 1))).label("real"),
-        )
+        db.query(Prediction.created_at, Prediction.is_ai_generated)
         .filter(Prediction.created_at >= since)
-        .group_by("day")
         .all()
     )
 
-    for row in rows:
-        day_str = row.day.isoformat() if isinstance(row.day, date) else str(row.day)
-        if day_str in date_map_ai:
-            date_map_ai[day_str] = row.ai
-            date_map_real[day_str] = row.real
+    ai_counts = defaultdict(int)
+    real_counts = defaultdict(int)
 
+    for created_at, is_ai in rows:
+        if created_at:
+            day_str = created_at.strftime("%Y-%m-%d")
+            if is_ai:
+                ai_counts[day_str] += 1
+            else:
+                real_counts[day_str] += 1
+
+    dates = _build_empty_date_range(days)
     return [
-        {"date": d, "ai": date_map_ai[d], "real": date_map_real[d]}
-        for d in date_map_ai
+        {"date": d, "ai": ai_counts.get(d, 0), "real": real_counts.get(d, 0)}
+        for d in dates
     ]
 
 
