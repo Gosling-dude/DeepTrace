@@ -160,10 +160,15 @@ class TimeSeriesPoint(BaseModel):
     count: int
 
 
+class ConfidenceBin(BaseModel):
+    range: str
+    count: int
+
+
 class AnalyticsTrends(BaseModel):
     daily_predictions: List[TimeSeriesPoint]
     daily_signups: List[TimeSeriesPoint]
-    confidence_distribution: List[Dict[str, float]]
+    confidence_distribution: List[ConfidenceBin]
     ai_vs_real_trend: List[Dict]
 
 
