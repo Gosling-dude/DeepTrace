@@ -8,8 +8,6 @@
 
 DeepTrace is a production-ready, SaaS-grade platform designed to detect whether an image is AI-generated or genuine. Built with a scalable microservices architecture, it features a hybrid deep learning inference pipeline, visual explainability, secure role-based authentication, and a complete administrative suite for platform monitoring.
 
-![DeepTrace Platform Overview](./docs/assets/placeholder_hero.png) *(UI Screenshot Placeholder: Clean Dashboard with uploaded image, AI Probability Score, and Heatmap overlays)*
-
 ---
 
 ## 🚀 Key Features
