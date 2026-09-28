@@ -55,6 +55,34 @@ Delete a specific prediction and its associated uploaded file.
 
 ---
 
+## 2b. Video Deepfake Inference
+Endpoints for the video deepfake detection pipeline (frame sampling → per-frame ensemble → temporal consistency → fusion).
+
+### `POST /video/predict`
+Upload a video and run deepfake detection.
+- **Auth**: Required
+- **Content-Type**: `multipart/form-data`
+- **Body**: `file` (mp4, mov, avi, webm, mkv, m4v; up to `VIDEO_MAX_FILE_SIZE_MB`, default 100MB)
+- **Response**: `200 OK` with `VideoInferenceResult`:
+  - `is_deepfake`, `confidence`
+  - `scores`: `frame_mean`, `frame_topk`, `frame_max`, `temporal`, `ensemble` (fake probability)
+  - `temporal`: `face_flicker`, `box_jitter`, `sharpness_variance`, `face_coverage`, `score`
+  - `frame_scores`: `[{index, timestamp_s, score, face_detected}]` for each sampled frame
+  - `video_meta`: `duration_s`, `fps`, `width`, `height`, `total_frames`, `sampled_frames`
+  - `explanation`: base64 PNGs of the most suspicious frame (`keyframe_png_base64`), its face Grad-CAM (`saliency_png_base64`) and frequency map (`frequency_map_png_base64`)
+- **Errors**: `400` for invalid type/extension/size or undecodable video (undecodable uploads are not stored).
+
+### `GET /video/history`
+Paginated list of the user's video predictions (`page`, `per_page`).
+
+### `GET /video/history/{prediction_id}`
+Full `VideoInferenceResult`; keyframe visuals are regenerated from the stored video.
+
+### `DELETE /video/history/{prediction_id}`
+Delete a video prediction and its stored video file.
+
+---
+
 ## 3. Administration
 Restricted endpoints for platform monitoring.
 
@@ -81,6 +109,9 @@ Security audit logs tracking critical actions across the platform.
 ### `GET /health`
 Liveness probe for container orchestration.
 - **Response**: `200 OK` with API version and status.
+
+### `GET /model/video/status`
+Status of the video deepfake detector (mode and whether the learned temporal fusion head is loaded).
 
 ### `GET /model/status`
 Information about the loaded ML models in memory.

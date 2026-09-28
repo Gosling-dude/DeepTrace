@@ -24,7 +24,7 @@ from .middleware import (
     RequestLoggingMiddleware,
     setup_rate_limiter,
 )
-from .routers import auth, image, admin, health
+from .routers import auth, image, video, admin, health
 
 # ─── Logging Setup ───────────────────────────────────────
 logging.basicConfig(
@@ -88,7 +88,7 @@ def _seed_admin_user():
 
 app = FastAPI(
     title="DeepTrace API",
-    description="AI-Generated Image Detection Platform with Explainability",
+    description="AI-Generated Image & Deepfake Video Detection Platform with Explainability",
     version=settings.APP_VERSION,
     lifespan=lifespan,
     docs_url="/docs" if settings.DEBUG else None,
@@ -122,4 +122,5 @@ setup_rate_limiter(app)
 app.include_router(health.router)
 app.include_router(auth.router)
 app.include_router(image.router)
+app.include_router(video.router)
 app.include_router(admin.router)

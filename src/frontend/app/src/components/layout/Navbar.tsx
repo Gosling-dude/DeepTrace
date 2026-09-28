@@ -20,7 +20,8 @@ export default function Navbar() {
     setProfileOpen(false);
   };
 
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string) =>
+    path === '/analyze' ? location.pathname.startsWith('/analyze') : location.pathname === path;
 
   const navLinks = isAuthenticated
     ? [

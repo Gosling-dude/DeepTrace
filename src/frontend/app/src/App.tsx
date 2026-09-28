@@ -12,7 +12,9 @@ import Signup from './pages/Signup';
 import ForgotPassword from './pages/ForgotPassword';
 import Dashboard from './pages/Dashboard';
 import Analyze from './pages/Analyze';
+import AnalyzeVideo from './pages/AnalyzeVideo';
 import Results from './pages/Results';
+import VideoResults from './pages/VideoResults';
 import HistoryPage from './pages/History';
 import Profile from './pages/Profile';
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -109,7 +111,9 @@ function App() {
             <Route element={<ProtectedRoute />}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/analyze" element={<Analyze />} />
+              <Route path="/analyze/video" element={<AnalyzeVideo />} />
               <Route path="/results/:id" element={<Results />} />
+              <Route path="/video-results/:id" element={<VideoResults />} />
               <Route path="/history" element={<HistoryPage />} />
               <Route path="/profile" element={<Profile />} />
             </Route>

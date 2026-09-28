@@ -33,6 +33,12 @@ class Settings(BaseSettings):
     MAX_FILE_SIZE_MB: int = 10
     ALLOWED_EXTENSIONS: str = "jpg,jpeg,png,webp,bmp,tiff"
 
+    # ── Video Detection ──────────────────────────────────
+    VIDEO_MAX_FILE_SIZE_MB: int = 100
+    VIDEO_ALLOWED_EXTENSIONS: str = "mp4,mov,avi,webm,mkv,m4v"
+    VIDEO_SAMPLE_FRAMES: int = 16  # frames uniformly sampled per video
+    VIDEO_MAX_DURATION_SECONDS: int = 600
+
     # ── Rate Limiting ────────────────────────────────────
     RATE_LIMIT_PER_MINUTE: int = 30
 
@@ -53,6 +59,14 @@ class Settings(BaseSettings):
     @property
     def max_file_size_bytes(self) -> int:
         return self.MAX_FILE_SIZE_MB * 1024 * 1024
+
+    @property
+    def video_allowed_extensions_list(self) -> list[str]:
+        return [ext.strip().lower() for ext in self.VIDEO_ALLOWED_EXTENSIONS.split(",")]
+
+    @property
+    def video_max_file_size_bytes(self) -> int:
+        return self.VIDEO_MAX_FILE_SIZE_MB * 1024 * 1024
 
     model_config = {
         "env_file": ".env",

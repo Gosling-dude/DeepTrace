@@ -129,6 +129,77 @@ class PredictionHistoryResponse(BaseModel):
     per_page: int
 
 
+# ─── Video Inference Schemas ─────────────────────────────
+
+class VideoExplanationOutputs(BaseModel):
+    keyframe_png_base64: str = Field(description="Most suspicious frame with the detected face boxed")
+    saliency_png_base64: str = Field(description="Grad-CAM overlay of the keyframe face crop")
+    frequency_map_png_base64: str = Field(description="Frequency spectrum of the keyframe face crop")
+
+
+class FrameScore(BaseModel):
+    index: int = Field(description="Frame index within the source video")
+    timestamp_s: float = Field(description="Frame position in seconds")
+    score: float = Field(ge=0.0, le=1.0, description="Per-frame manipulation probability")
+    face_detected: bool
+
+
+class TemporalFeatures(BaseModel):
+    face_flicker: float
+    box_jitter: float
+    sharpness_variance: float
+    face_coverage: float
+    score: float
+
+
+class VideoMeta(BaseModel):
+    duration_s: float
+    fps: float
+    width: int
+    height: int
+    total_frames: int
+    sampled_frames: int
+
+
+class VideoInferenceResult(BaseModel):
+    id: str
+    is_deepfake: bool = Field(description="Final verdict: True if the video is likely manipulated")
+    confidence: float = Field(ge=0.0, le=1.0, description="Confidence in the verdict")
+    model_version: str
+    scores: Dict[str, float] = Field(description="frame_mean, frame_max, frame_topk, temporal, ensemble")
+    temporal: TemporalFeatures
+    frame_scores: List[FrameScore]
+    keyframe_index: Optional[int] = None
+    video_meta: VideoMeta
+    explanation: VideoExplanationOutputs
+    warnings: List[str] = Field(default_factory=list)
+    inference_ms: int
+    upload_id: Optional[str] = None
+    original_filename: Optional[str] = None
+    created_at: Optional[datetime] = None
+
+
+class VideoHistoryItem(BaseModel):
+    id: str
+    upload_id: str
+    is_deepfake: bool
+    confidence: float
+    model_version: str
+    inference_ms: int
+    warnings: List[str]
+    duration_s: float
+    original_filename: str
+    file_size_bytes: int
+    created_at: datetime
+
+
+class VideoHistoryResponse(BaseModel):
+    predictions: List[VideoHistoryItem]
+    total: int
+    page: int
+    per_page: int
+
+
 # ─── Model Status ────────────────────────────────────────
 
 class ModelStatusResponse(BaseModel):

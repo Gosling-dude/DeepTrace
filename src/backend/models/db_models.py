@@ -37,6 +37,7 @@ class User(Base):
     # Relationships
     uploads = relationship("Upload", back_populates="user", cascade="all, delete-orphan")
     predictions = relationship("Prediction", back_populates="user", cascade="all, delete-orphan")
+    video_predictions = relationship("VideoPrediction", back_populates="user", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<User {self.email} ({self.role})>"
@@ -56,6 +57,9 @@ class Upload(Base):
     # Relationships
     user = relationship("User", back_populates="uploads")
     prediction = relationship("Prediction", back_populates="upload", uselist=False, cascade="all, delete-orphan")
+    video_prediction = relationship(
+        "VideoPrediction", back_populates="upload", uselist=False, cascade="all, delete-orphan"
+    )
 
     def __repr__(self):
         return f"<Upload {self.original_filename}>"
@@ -87,6 +91,41 @@ class Prediction(Base):
 
     def __repr__(self):
         return f"<Prediction {'AI' if self.is_ai_generated else 'Real'} ({self.confidence:.1%})>"
+
+
+class VideoPrediction(Base):
+    """Deepfake verdict for an uploaded video (frame-level + temporal analysis)."""
+
+    __tablename__ = "video_predictions"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    upload_id = Column(String(36), ForeignKey("uploads.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    is_deepfake = Column(Boolean, nullable=False)
+    confidence = Column(Float, nullable=False)
+    scores = Column(JSON, nullable=False)
+    model_version = Column(String(50), nullable=False)
+    inference_ms = Column(Integer, nullable=False)
+    warnings = Column(JSON, default=list)
+    # Temporal-consistency features (face_flicker, box_jitter, ...)
+    temporal_features = Column(JSON, default=dict)
+    # Video metadata (duration_s, fps, width, height, total_frames)
+    video_meta = Column(JSON, default=dict)
+    # Per-frame results: [{index, timestamp_s, score, face_detected}, ...]
+    frame_scores = Column(JSON, default=list)
+    # Index (into the source video) of the most suspicious sampled frame
+    keyframe_index = Column(Integer, nullable=True)
+    created_at = Column(DateTime, default=utcnow, nullable=False)
+
+    upload = relationship("Upload", back_populates="video_prediction")
+    user = relationship("User", back_populates="video_predictions")
+
+    __table_args__ = (
+        Index("ix_video_predictions_created_at", "created_at"),
+    )
+
+    def __repr__(self):
+        return f"<VideoPrediction {'Fake' if self.is_deepfake else 'Real'} ({self.confidence:.1%})>"
 
 
 class AnalyticsEvent(Base):

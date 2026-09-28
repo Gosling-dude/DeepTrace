@@ -1,4 +1,4 @@
-# DeepTrace — AI Image Detection SaaS
+# DeepTrace — AI Image & Deepfake Video Detection SaaS
 
 [![Build Status](https://img.shields.io/badge/build-passing-success?style=for-the-badge&logo=github)](https://github.com/)
 [![Docker](https://img.shields.io/badge/docker-ready-blue?style=for-the-badge&logo=docker)](https://github.com/)
@@ -6,13 +6,14 @@
 [![React 18](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://reactjs.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
 
-DeepTrace is a production-ready, SaaS-grade platform designed to detect whether an image is AI-generated or genuine. Built with a scalable microservices architecture, it features a hybrid deep learning inference pipeline, visual explainability, secure role-based authentication, and a complete administrative suite for platform monitoring.
+DeepTrace is a production-ready, SaaS-grade platform designed to detect whether an image is AI-generated or genuine, and whether a video contains deepfaked faces. Built with a scalable microservices architecture, it features a hybrid deep learning inference pipeline, visual explainability, secure role-based authentication, and a complete administrative suite for platform monitoring.
 
 ---
 
 ## 🚀 Key Features
 
 * **Advanced Inference Engine**: Utilizes a dual-stream architecture combining spatial CNN analysis and frequency domain mapping to expose synthetic artifacts invisible to the human eye.
+* **Deepfake Video Detection**: Samples frames across a clip, localises faces, scores each with the hybrid ensemble, and fuses the result with temporal-consistency signals (face flicker, box jitter, detail variance). Results include a per-frame score timeline and the most suspicious frame with heatmaps.
 * **Visual Explainability**: Provides transparent results through Grad-CAM heatmaps and frequency spectrogram overlays, showing *why* an image was flagged.
 * **Complete SaaS Experience**: Full authentication flow (JWT, bcrypt), user profiles, and persistent prediction history.
 * **Enterprise Security**: Role-based access control (RBAC), strict CORS, SlowAPI rate limiting, and immutable audit logs for administrative actions.
@@ -27,6 +28,7 @@ DeepTrace is a production-ready, SaaS-grade platform designed to detect whether 
 | **Spatial Artifact Detection** | ✅ | ✅ |
 | **Frequency Spectrum (FFT) Detection** | ❌ | ✅ |
 | **Visual Explainability (Grad-CAM)** | ❌ | ✅ |
+| **Deepfake Video Detection (Frame + Temporal)** | ❌ | ✅ |
 | **Full User Authentication & History** | ❌ | ✅ |
 | **Admin Analytics Dashboard** | ❌ | ✅ |
 | **Containerized Microservices** | ❌ | ✅ |

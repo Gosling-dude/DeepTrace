@@ -43,6 +43,31 @@ def validate_file(filename: str, content_type: str, file_size: int) -> list[str]
     return errors
 
 
+def validate_video_file(filename: str, content_type: str, file_size: int) -> list[str]:
+    """Validate a video upload. Returns list of errors."""
+    errors = []
+    ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+
+    # Some browsers send application/octet-stream for .mkv etc.; the extension check still applies.
+    if not (content_type.startswith("video/") or content_type in ("application/octet-stream", "")):
+        errors.append(f"Invalid content type: {content_type}. Only videos are allowed.")
+
+    if ext not in settings.video_allowed_extensions_list:
+        errors.append(
+            f"Unsupported file extension: .{ext}. Allowed: {', '.join(settings.video_allowed_extensions_list)}"
+        )
+
+    if file_size > settings.video_max_file_size_bytes:
+        errors.append(
+            f"File too large: {file_size / (1024*1024):.1f}MB. Maximum: {settings.VIDEO_MAX_FILE_SIZE_MB}MB"
+        )
+
+    if file_size == 0:
+        errors.append("Empty file uploaded")
+
+    return errors
+
+
 def save_upload(
     db: Session,
     user_id: str,

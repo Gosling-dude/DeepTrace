@@ -43,6 +43,79 @@ export interface PredictionHistoryResponse {
   per_page: number;
 }
 
+export interface FrameScore {
+  index: number;
+  timestamp_s: number;
+  score: number;
+  face_detected: boolean;
+}
+
+export interface TemporalFeatures {
+  face_flicker: number;
+  box_jitter: number;
+  sharpness_variance: number;
+  face_coverage: number;
+  score: number;
+}
+
+export interface VideoMeta {
+  duration_s: number;
+  fps: number;
+  width: number;
+  height: number;
+  total_frames: number;
+  sampled_frames: number;
+}
+
+export interface VideoInferenceResult {
+  id: string;
+  is_deepfake: boolean;
+  confidence: number;
+  model_version: string;
+  scores: {
+    frame_mean: number;
+    frame_max: number;
+    frame_topk: number;
+    temporal: number;
+    ensemble: number;
+  };
+  temporal: TemporalFeatures;
+  frame_scores: FrameScore[];
+  keyframe_index: number | null;
+  video_meta: VideoMeta;
+  explanation: {
+    keyframe_png_base64: string;
+    saliency_png_base64: string;
+    frequency_map_png_base64: string;
+  };
+  warnings: string[];
+  inference_ms: number;
+  upload_id?: string;
+  original_filename?: string;
+  created_at?: string;
+}
+
+export interface VideoHistoryItem {
+  id: string;
+  upload_id: string;
+  is_deepfake: boolean;
+  confidence: number;
+  model_version: string;
+  inference_ms: number;
+  warnings: string[];
+  duration_s: number;
+  original_filename: string;
+  file_size_bytes: number;
+  created_at: string;
+}
+
+export interface VideoHistoryResponse {
+  predictions: VideoHistoryItem[];
+  total: number;
+  page: number;
+  per_page: number;
+}
+
 export interface PlatformStats {
   total_users: number;
   active_users_today: number;

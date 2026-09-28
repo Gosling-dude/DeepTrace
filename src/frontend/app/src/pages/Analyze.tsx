@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { imageApi } from '../api/client';
 import { Upload, Loader2, FileImage, X, Shield, AlertTriangle, CheckCircle } from 'lucide-react';
+import MediaTypeSwitch from '../components/MediaTypeSwitch';
 import type { InferenceResult } from '../types';
 
 export default function Analyze() {
@@ -68,9 +69,12 @@ export default function Analyze() {
   return (
     <div className="min-h-screen pt-20 pb-12 px-4">
       <div className="max-w-5xl mx-auto">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">Analyze Image</h1>
-          <p className="text-gray-400">Upload an image to detect if it's AI-generated or genuine.</p>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-white mb-2">Analyze Image</h1>
+            <p className="text-gray-400">Upload an image to detect if it's AI-generated or genuine.</p>
+          </div>
+          <MediaTypeSwitch active="image" />
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

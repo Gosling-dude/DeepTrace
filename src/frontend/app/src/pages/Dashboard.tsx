@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuthStore } from '../store/authStore';
 import { imageApi } from '../api/client';
-import { Upload, History, TrendingUp, Clock, Shield, ArrowRight } from 'lucide-react';
+import { Upload, History, TrendingUp, Clock, Shield, ArrowRight, Film } from 'lucide-react';
 import type { PredictionHistoryItem } from '../types';
 
 export default function Dashboard() {
@@ -102,7 +102,7 @@ export default function Dashboard() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8"
+          className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8"
         >
           <Link to="/analyze" className="glass-card glass-card-hover p-6 flex items-center gap-4 group">
             <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)' }}>
@@ -111,6 +111,17 @@ export default function Dashboard() {
             <div className="flex-1">
               <h3 className="text-lg font-semibold text-white mb-1">Analyze New Image</h3>
               <p className="text-sm text-gray-400">Upload an image to check if it's AI-generated</p>
+            </div>
+            <ArrowRight size={18} className="text-gray-500 group-hover:text-white group-hover:translate-x-1 transition-all" />
+          </Link>
+
+          <Link to="/analyze/video" className="glass-card glass-card-hover p-6 flex items-center gap-4 group">
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-rose-500/10 border border-rose-500/20">
+              <Film size={22} className="text-rose-400" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-white mb-1">Analyze Video</h3>
+              <p className="text-sm text-gray-400">Detect deepfake face swaps in a video clip</p>
             </div>
             <ArrowRight size={18} className="text-gray-500 group-hover:text-white group-hover:translate-x-1 transition-all" />
           </Link>

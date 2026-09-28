@@ -172,6 +172,29 @@ export const imageApi = {
     apiRequest(`/api/v1/image/history/${id}`, { method: 'DELETE' }),
 };
 
+// ─── Video API ─────────────────────────────────────────
+
+export const videoApi = {
+  predict: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return apiRequest('/api/v1/video/predict', {
+      method: 'POST',
+      body: formData,
+      isFormData: true,
+    });
+  },
+
+  getHistory: (page = 1, perPage = 20) =>
+    apiRequest(`/api/v1/video/history?page=${page}&per_page=${perPage}`),
+
+  getPrediction: (id: string) =>
+    apiRequest(`/api/v1/video/history/${id}`),
+
+  deletePrediction: (id: string) =>
+    apiRequest(`/api/v1/video/history/${id}`, { method: 'DELETE' }),
+};
+
 // ─── Admin API ─────────────────────────────────────────
 
 export const adminApi = {
