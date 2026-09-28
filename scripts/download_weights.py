@@ -33,6 +33,31 @@ except ImportError as e:
     logger.warning(f"Could not import torch or model definitions: {e}. Will not be able to generate dummy .pt files.")
     HAS_MODELS = False
 
+YUNET_URL = (
+    "https://media.githubusercontent.com/media/opencv/opencv_zoo/main/models/face_detection_yunet/"
+    "face_detection_yunet_2023mar.onnx"
+)
+
+
+def download_face_detector(target_dir: Path):
+    """Fetch the YuNet face detector used by the video deepfake pipeline."""
+    yunet_path = target_dir / "face_detection_yunet_2023mar.onnx"
+    if yunet_path.exists():
+        logger.info(f"Face detector already exists at {yunet_path}")
+        return
+    try:
+        import urllib.request
+        logger.info("Downloading YuNet face detector for video analysis...")
+        urllib.request.urlretrieve(YUNET_URL, yunet_path)
+        if yunet_path.stat().st_size < 10_000:  # a Git LFS pointer, not the model
+            yunet_path.unlink()
+            raise RuntimeError("downloaded file is not a valid ONNX model")
+        logger.info(f"Saved face detector to {yunet_path}")
+    except Exception as e:
+        # Non-fatal: the video pipeline falls back to Haar cascades / centre crops.
+        logger.warning(f"Could not download YuNet face detector: {e}")
+
+
 def download_weights(target_dir: Path):
     """
     Downloads or generates model weights.
@@ -64,7 +89,9 @@ def download_weights(target_dir: Path):
             logger.info(f"Saved generated weights to {freq_path}")
         else:
             logger.info(f"Weights already exist at {freq_path}")
-            
+
+        download_face_detector(target_dir)
+
     else:
         logger.error("Model architectures not found. Cannot generate valid state_dicts.")
         sys.exit(1)
