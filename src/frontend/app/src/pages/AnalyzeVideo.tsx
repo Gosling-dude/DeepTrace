@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { videoApi } from '../api/client';
-import { Upload, Loader2, Film, X, ScanFace } from 'lucide-react';
+import { Upload, Loader2, Film, X } from 'lucide-react';
 import MediaTypeSwitch from '../components/MediaTypeSwitch';
 import VideoResultPanel from '../components/VideoResultPanel';
 import type { VideoInferenceResult } from '../types';
@@ -57,7 +57,7 @@ export default function AnalyzeVideo() {
     try {
       const res = await videoApi.predict(file);
       setResult(res);
-      toast.success('Video analysis complete!');
+      toast.success('Video analysis complete');
     } catch (error: any) {
       toast.error(error.detail || 'Analysis failed. Please try again.');
     } finally {
@@ -72,28 +72,26 @@ export default function AnalyzeVideo() {
   };
 
   return (
-    <div className="min-h-screen pt-20 pb-12 px-4">
+    <div className="min-h-dvh pt-24 pb-20 px-5 sm:px-8">
       <div className="max-w-6xl mx-auto">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-8 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-white mb-2">Analyze Video</h1>
-            <p className="text-gray-400">Detect face-swap and reenactment deepfakes using frame-level and temporal analysis.</p>
+            <h1 className="page-title mb-2">Analyze a video</h1>
+            <p className="text-gray-400">Check a clip for face-swap and reenactment deepfakes, frame by frame and over time.</p>
           </div>
           <MediaTypeSwitch active="video" />
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           {/* Upload Panel */}
-          <motion.div className="lg:col-span-2" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-            <div className="glass-card p-6">
-              <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                <Film size={18} /> Upload Video
-              </h2>
+          <motion.div className="lg:col-span-2" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}>
+            <div className="panel p-6">
+              <h2 className="heading text-lg text-bone mb-4">Video</h2>
 
               {!preview ? (
                 <div
-                  className={`relative border-2 border-dashed rounded-xl p-12 text-center cursor-pointer transition-all duration-200
-                    ${dragActive ? 'border-blue-400 bg-blue-500/10' : 'border-gray-700 hover:border-gray-500 hover:bg-white/[0.02]'}`}
+                  className={`relative border border-dashed rounded-md p-12 text-center cursor-pointer transition-colors duration-200
+                    ${dragActive ? 'border-bone bg-bone/5' : 'border-line-strong hover:border-bone-mute hover:bg-bone/[0.03]'}`}
                   onDragEnter={handleDrag}
                   onDragLeave={handleDrag}
                   onDragOver={handleDrag}
@@ -105,18 +103,18 @@ export default function AnalyzeVideo() {
                     onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                   />
-                  <Upload size={40} className="text-gray-500 mx-auto mb-4" />
-                  <p className="text-white font-medium mb-1">Drag & drop a video here</p>
-                  <p className="text-sm text-gray-500">or click to browse • MP4, MOV, WebM, AVI up to {MAX_VIDEO_MB}MB</p>
+                  <Upload size={28} strokeWidth={1.5} className="text-gray-500 mx-auto mb-4" />
+                  <p className="text-bone font-medium mb-1">Drag & drop a video here</p>
+                  <p className="text-sm text-gray-500">or click to browse. MP4, MOV, WebM or AVI, up to {MAX_VIDEO_MB}&nbsp;MB.</p>
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <div className="relative rounded-xl overflow-hidden bg-black/30">
+                  <div className="relative rounded overflow-hidden bg-ink-950 border border-line">
                     <video src={preview} controls muted className="w-full max-h-80 object-contain" />
                     <button
                       onClick={resetUpload}
                       disabled={loading}
-                      className="absolute top-2 right-2 w-8 h-8 rounded-lg bg-black/60 flex items-center justify-center text-gray-300 hover:text-white hover:bg-black/80 transition-colors"
+                      className="absolute top-2 right-2 w-8 h-8 rounded-lg bg-black/60 flex items-center justify-center text-white/80 hover:text-white hover:bg-black/80 transition-colors"
                     >
                       <X size={16} />
                     </button>
@@ -125,37 +123,37 @@ export default function AnalyzeVideo() {
                   <div className="flex items-center gap-3 text-sm text-gray-400">
                     <Film size={14} />
                     <span className="truncate">{file?.name}</span>
-                    <span className="text-gray-600">•</span>
-                    <span>{((file?.size || 0) / (1024 * 1024)).toFixed(1)} MB</span>
+                    <span className="num text-xs ml-auto shrink-0">{((file?.size || 0) / (1024 * 1024)).toFixed(1)} MB</span>
                   </div>
 
                   <button onClick={handleAnalyze} disabled={loading} className="btn-primary w-full flex items-center justify-center gap-2">
                     {loading ? (
                       <>
                         <Loader2 size={18} className="animate-spin" />
-                        Sampling frames & analyzing...
+                        Sampling frames and analyzing…
                       </>
                     ) : (
                       <>
-                        <ScanFace size={18} />
-                        Analyze Video
+                        Analyze video
                       </>
                     )}
                   </button>
                 </div>
               )}
 
-              <div className="mt-6 space-y-2 text-xs text-gray-500">
-                <p className="font-semibold text-gray-400 uppercase tracking-wider">How it works</p>
-                <p>1. Frames are sampled uniformly across the clip and faces are located in each.</p>
-                <p>2. Each face is scored by the spatial + frequency detection ensemble.</p>
-                <p>3. Temporal signals (face flicker, jitter, detail consistency) expose frame-by-frame generation.</p>
+              <div className="mt-6 pt-5 border-t border-line text-sm text-gray-400">
+                <p className="font-medium text-gray-300">How it works</p>
+                <ol className="mt-2 space-y-1.5 list-decimal list-inside marker:text-gray-500">
+                  <li>Frames are sampled evenly across the clip and the face is located in each.</li>
+                  <li>Each face is scored by the spatial and frequency streams.</li>
+                  <li>Flicker, jitter and detail consistency are compared between frames.</li>
+                </ol>
               </div>
             </div>
           </motion.div>
 
           {/* Results Panel */}
-          <motion.div className="lg:col-span-3" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+          <motion.div className="lg:col-span-3" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
             <AnimatePresence mode="wait">
               {result ? (
                 <motion.div
@@ -163,11 +161,11 @@ export default function AnalyzeVideo() {
                   initial={{ opacity: 0, scale: 0.96 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.96 }}
-                  className={`glass-card p-6 border ${result.is_deepfake ? 'border-rose-500/30' : 'border-emerald-500/30'}`}
+                  className={`panel p-6 border ${result.is_deepfake ? 'border-signal-500/30' : 'border-real-500/30'}`}
                 >
                   <VideoResultPanel result={result} compact />
                   <button onClick={() => navigate(`/video-results/${result.id}`)} className="btn-secondary w-full mt-6 text-sm">
-                    View Full Report
+                    View full report
                   </button>
                 </motion.div>
               ) : (
@@ -175,11 +173,10 @@ export default function AnalyzeVideo() {
                   key="empty"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="glass-card h-full min-h-[500px] flex items-center justify-center"
+                  className="h-full min-h-[320px] lg:min-h-[500px] flex items-center justify-center rounded-md border border-dashed border-line-strong"
                 >
                   <div className="text-center">
-                    <ScanFace size={48} className="text-gray-700 mx-auto mb-4" />
-                    <p className="text-gray-500">Upload a video to see deepfake detection results</p>
+                    <p className="text-gray-500">The report appears here once a video is analyzed.</p>
                   </div>
                 </motion.div>
               )}

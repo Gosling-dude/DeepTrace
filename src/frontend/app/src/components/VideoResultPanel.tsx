@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
-import { AlertTriangle, CheckCircle, Film, Activity } from 'lucide-react';
+import { AlertTriangle, CheckCircle } from 'lucide-react';
 import type { VideoInferenceResult } from '../types';
 
 type ViewMode = 'keyframe' | 'saliency' | 'frequency';
@@ -47,33 +47,31 @@ export default function VideoResultPanel({ result, compact = false }: { result: 
       {/* Verdict */}
       <div className="flex items-start justify-between">
         <div>
-          <div className="text-xs uppercase tracking-wider text-gray-500 font-semibold mb-2">Detection Result</div>
-          <div className={`text-3xl font-bold flex items-center gap-2 ${fake ? 'text-rose-400' : 'text-emerald-400'}`}>
+          <div className="label mb-2">Verdict</div>
+          <div className={`heading text-3xl flex items-center gap-2 ${fake ? 'text-signal-400' : 'text-real-400'}`}>
             {fake ? <AlertTriangle size={28} /> : <CheckCircle size={28} />}
-            {fake ? 'Likely Deepfake' : 'Likely Authentic'}
+            {fake ? 'Likely deepfake' : 'Likely authentic'}
           </div>
         </div>
         <div className="text-right">
-          <div className="text-3xl font-bold text-white">{confidence}%</div>
+          <div className="num text-3xl text-bone">{confidence}%</div>
           <div className="text-xs text-gray-500">Confidence</div>
         </div>
       </div>
 
-      <div className="h-2 rounded-full bg-gray-800 overflow-hidden">
+      <div className="h-1.5 rounded-sm bg-ink-950 overflow-hidden">
         <motion.div
           initial={{ width: 0 }}
           animate={{ width: `${confidence}%` }}
           transition={{ duration: 1, ease: 'easeOut' }}
-          className={`h-full rounded-full ${fake ? 'bg-gradient-to-r from-rose-500 to-rose-400' : 'bg-gradient-to-r from-emerald-500 to-emerald-400'}`}
+          className={`h-full ${fake ? 'bg-signal-500' : 'bg-real-400'}`}
         />
       </div>
 
       {/* Frame timeline */}
-      <div className="bg-black/30 rounded-xl p-4 border border-white/5">
+      <div className="well p-4">
         <div className="flex items-center justify-between mb-3">
-          <span className="text-sm font-medium text-gray-300 flex items-center gap-2">
-            <Activity size={14} /> Per-frame manipulation score
-          </span>
+          <span className="text-sm font-medium text-gray-300">Manipulation score per frame</span>
           <span className="text-xs text-gray-500">{result.frame_scores.length} frames sampled</span>
         </div>
         <div className={compact ? 'h-36' : 'h-48'}>
@@ -81,23 +79,23 @@ export default function VideoResultPanel({ result, compact = false }: { result: 
             <AreaChart data={timeline} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
               <defs>
                 <linearGradient id="frameScore" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={fake ? '#f43f5e' : '#10b981'} stopOpacity={0.4} />
-                  <stop offset="95%" stopColor={fake ? '#f43f5e' : '#10b981'} stopOpacity={0} />
+                  <stop offset="5%" stopColor={fake ? 'var(--signal)' : 'var(--real)'} stopOpacity={0.28} />
+                  <stop offset="95%" stopColor={fake ? 'var(--signal)' : 'var(--real)'} stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-              <XAxis dataKey="t" tickFormatter={formatTime} stroke="#6b7280" fontSize={11} />
-              <YAxis domain={[0, 100]} stroke="#6b7280" fontSize={11} />
-              <ReferenceLine y={50} stroke="#f59e0b" strokeDasharray="4 4" />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" />
+              <XAxis dataKey="t" tickFormatter={formatTime} stroke="var(--bone-mute)" fontSize={11} />
+              <YAxis domain={[0, 100]} stroke="var(--bone-mute)" fontSize={11} />
+              <ReferenceLine y={50} stroke="var(--bone-faint)" strokeDasharray="4 4" />
               <Tooltip
-                contentStyle={{ background: '#1a1f35', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: 12 }}
+                contentStyle={{ background: 'var(--panel)', border: '1px solid var(--line-strong)', color: 'var(--bone)', borderRadius: 4, fontSize: 12 }}
                 labelFormatter={(t) => `t = ${formatTime(Number(t))}`}
                 formatter={(v, _n, item) => [
                   `${v}%${(item?.payload as { face?: boolean })?.face ? '' : ' (no face)'}`,
                   'Fake score',
                 ]}
               />
-              <Area type="monotone" dataKey="score" stroke={fake ? '#f43f5e' : '#10b981'} fill="url(#frameScore)" strokeWidth={2} />
+              <Area type="monotone" dataKey="score" stroke={fake ? 'var(--signal)' : 'var(--real)'} fill="url(#frameScore)" strokeWidth={1.5} />
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -105,14 +103,14 @@ export default function VideoResultPanel({ result, compact = false }: { result: 
 
       {/* Visual evidence */}
       {hasVisuals && (
-        <div className="bg-black/30 rounded-xl p-4 border border-white/5">
+        <div className="well p-4">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-medium text-gray-300">Most Suspicious Frame</span>
-            <div className="flex bg-gray-800 p-0.5 rounded-lg">
+            <span className="text-sm font-medium text-gray-300">Most suspicious frame</span>
+            <div className="seg">
               {(['keyframe', 'saliency', 'frequency'] as ViewMode[]).map((m) => (
                 <button
                   key={m}
-                  className={`px-3 py-1 text-xs rounded-md capitalize transition-colors ${viewMode === m ? 'bg-blue-500 text-white' : 'text-gray-400 hover:text-white'}`}
+                  className={`seg-item capitalize ${viewMode === m ? 'is-active' : ''}`}
                   onClick={() => setViewMode(m)}
                 >
                   {m === 'saliency' ? 'Spatial' : m}
@@ -120,11 +118,11 @@ export default function VideoResultPanel({ result, compact = false }: { result: 
               ))}
             </div>
           </div>
-          <div className="flex justify-center bg-gray-900/50 rounded-lg overflow-hidden min-h-[200px]">
+          <div className="flex justify-center overflow-hidden min-h-[200px]">
             {images[viewMode] ? (
               <img src={images[viewMode]} alt={viewMode} className={`${compact ? 'max-h-64' : 'max-h-96'} object-contain`} />
             ) : (
-              <div className="flex items-center text-sm text-gray-600">Visual not available</div>
+              <div className="flex items-center text-sm text-gray-500">Visual not available</div>
             )}
           </div>
           <p className="text-xs text-center text-gray-500 mt-2">{VIEW_CAPTIONS[viewMode]}</p>
@@ -134,7 +132,7 @@ export default function VideoResultPanel({ result, compact = false }: { result: 
       {/* Breakdown */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         <div>
-          <div className="text-xs text-gray-500 uppercase tracking-wider mb-2">Model Scores</div>
+          <div className="label mb-2">Frame scores</div>
           <div className="space-y-2 text-sm">
             {[
               ['Frame average', result.scores.frame_mean],
@@ -144,18 +142,18 @@ export default function VideoResultPanel({ result, compact = false }: { result: 
             ].map(([label, v]) => (
               <div key={label as string} className="flex justify-between">
                 <span className="text-gray-400">{label}</span>
-                <span className="text-white font-mono">{((v as number) * 100).toFixed(1)}%</span>
+                <span className="text-bone font-mono">{((v as number) * 100).toFixed(1)}%</span>
               </div>
             ))}
           </div>
         </div>
         <div>
-          <div className="text-xs text-gray-500 uppercase tracking-wider mb-2">Temporal Signals</div>
+          <div className="label mb-2">Temporal signals</div>
           <div className="space-y-2 text-sm">
             {TEMPORAL_LABELS.map(({ key, label, hint }) => (
               <div key={key} className="flex justify-between" title={hint}>
                 <span className="text-gray-400">{label}</span>
-                <span className="text-white font-mono">{(result.temporal[key] * 100).toFixed(1)}%</span>
+                <span className="text-bone font-mono">{(result.temporal[key] * 100).toFixed(1)}%</span>
               </div>
             ))}
           </div>
@@ -169,11 +167,9 @@ export default function VideoResultPanel({ result, compact = false }: { result: 
           ['Frame rate', `${result.video_meta.fps} fps`],
           ['Latency', `${result.inference_ms}ms`],
         ].map(([label, v]) => (
-          <div key={label} className="bg-white/[0.03] rounded-lg p-3 border border-white/5">
-            <div className="text-gray-500 mb-1 flex items-center gap-1">
-              {label === 'Duration' && <Film size={11} />} {label}
-            </div>
-            <div className="text-white font-mono">{v}</div>
+          <div key={label} className="border-t border-line pt-2.5">
+            <div className="text-gray-500 mb-1">{label}</div>
+            <div className="text-bone font-mono">{v}</div>
           </div>
         ))}
       </div>

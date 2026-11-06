@@ -3,20 +3,20 @@ import { FileImage, Film } from 'lucide-react';
 
 /** Toggle between the image and video analysis pages. */
 export default function MediaTypeSwitch({ active }: { active: 'image' | 'video' }) {
-  const base = 'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors';
+  const base = 'seg-item';
   return (
-    <div className="inline-flex bg-gray-800/60 p-1 rounded-xl border border-white/5">
+    <div className="seg" role="tablist" aria-label="Media type">
       <Link
         to="/analyze"
-        className={`${base} ${active === 'image' ? 'bg-blue-500 text-white' : 'text-gray-400 hover:text-white'}`}
+        className={`${base} ${active === 'image' ? 'is-active' : ''}`}
       >
-        <FileImage size={15} /> Image
+        <FileImage size={14} /> Image
       </Link>
       <Link
         to="/analyze/video"
-        className={`${base} ${active === 'video' ? 'bg-blue-500 text-white' : 'text-gray-400 hover:text-white'}`}
+        className={`${base} ${active === 'video' ? 'is-active' : ''}`}
       >
-        <Film size={15} /> Video
+        <Film size={14} /> Video
       </Link>
     </div>
   );
