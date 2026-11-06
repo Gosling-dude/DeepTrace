@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { imageApi } from '../api/client';
-import { Upload, Loader2, FileImage, X, Shield, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Upload, Loader2, FileImage, X, AlertTriangle, CheckCircle } from 'lucide-react';
 import MediaTypeSwitch from '../components/MediaTypeSwitch';
 import type { InferenceResult } from '../types';
 
@@ -50,7 +50,7 @@ export default function Analyze() {
     try {
       const res = await imageApi.predict(file);
       setResult(res);
-      toast.success('Analysis complete!');
+      toast.success('Analysis complete');
     } catch (error: any) {
       toast.error(error.detail || 'Analysis failed. Please try again.');
     } finally {
@@ -67,28 +67,26 @@ export default function Analyze() {
   const confidence = result ? (result.confidence * 100).toFixed(1) : '0';
 
   return (
-    <div className="min-h-screen pt-20 pb-12 px-4">
+    <div className="min-h-dvh pt-24 pb-20 px-5 sm:px-8">
       <div className="max-w-5xl mx-auto">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-8 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-white mb-2">Analyze Image</h1>
-            <p className="text-gray-400">Upload an image to detect if it's AI-generated or genuine.</p>
+            <h1 className="page-title mb-2">Analyze an image</h1>
+            <p className="text-gray-400">Upload an image to check whether it is AI-generated or genuine.</p>
           </div>
           <MediaTypeSwitch active="image" />
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Upload Panel */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-            <div className="glass-card p-6">
-              <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                <FileImage size={18} /> Upload Image
-              </h2>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}>
+            <div className="panel p-6">
+              <h2 className="heading text-lg text-bone mb-4">Image</h2>
 
               {!preview ? (
                 <div
-                  className={`relative border-2 border-dashed rounded-xl p-12 text-center cursor-pointer transition-all duration-200
-                    ${dragActive ? 'border-blue-400 bg-blue-500/10' : 'border-gray-700 hover:border-gray-500 hover:bg-white/[0.02]'}`}
+                  className={`relative border border-dashed rounded-md p-12 text-center cursor-pointer transition-colors duration-200
+                    ${dragActive ? 'border-bone bg-bone/5' : 'border-line-strong hover:border-bone-mute hover:bg-bone/[0.03]'}`}
                   onDragEnter={handleDrag}
                   onDragLeave={handleDrag}
                   onDragOver={handleDrag}
@@ -100,17 +98,17 @@ export default function Analyze() {
                     onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                   />
-                  <Upload size={40} className="text-gray-500 mx-auto mb-4" />
-                  <p className="text-white font-medium mb-1">Drag & drop an image here</p>
-                  <p className="text-sm text-gray-500">or click to browse • JPG, PNG, WebP up to 10MB</p>
+                  <Upload size={28} strokeWidth={1.5} className="text-gray-500 mx-auto mb-4" />
+                  <p className="text-bone font-medium mb-1">Drag & drop an image here</p>
+                  <p className="text-sm text-gray-500">or click to browse. JPG, PNG or WebP, up to 10&nbsp;MB.</p>
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <div className="relative rounded-xl overflow-hidden bg-black/30">
+                  <div className="relative rounded overflow-hidden bg-ink-950 border border-line">
                     <img src={preview} alt="Preview" className="w-full max-h-80 object-contain" />
                     <button
                       onClick={resetUpload}
-                      className="absolute top-2 right-2 w-8 h-8 rounded-lg bg-black/60 flex items-center justify-center text-gray-300 hover:text-white hover:bg-black/80 transition-colors"
+                      className="absolute top-2 right-2 w-8 h-8 rounded-lg bg-black/60 flex items-center justify-center text-white/80 hover:text-white hover:bg-black/80 transition-colors"
                     >
                       <X size={16} />
                     </button>
@@ -119,8 +117,7 @@ export default function Analyze() {
                   <div className="flex items-center gap-3 text-sm text-gray-400">
                     <FileImage size={14} />
                     <span className="truncate">{file?.name}</span>
-                    <span className="text-gray-600">•</span>
-                    <span>{((file?.size || 0) / 1024).toFixed(0)} KB</span>
+                    <span className="num text-xs ml-auto shrink-0">{((file?.size || 0) / 1024).toFixed(0)} KB</span>
                   </div>
 
                   <button
@@ -131,12 +128,11 @@ export default function Analyze() {
                     {loading ? (
                       <>
                         <Loader2 size={18} className="animate-spin" />
-                        Analyzing artifacts...
+                        Analyzing…
                       </>
                     ) : (
                       <>
-                        <Shield size={18} />
-                        Analyze Image
+                        Analyze image
                       </>
                     )}
                   </button>
@@ -146,7 +142,7 @@ export default function Analyze() {
           </motion.div>
 
           {/* Results Panel */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
             <AnimatePresence mode="wait">
               {result ? (
                 <motion.div
@@ -154,49 +150,49 @@ export default function Analyze() {
                   initial={{ opacity: 0, scale: 0.96 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.96 }}
-                  className={`glass-card p-6 border ${result.is_ai_generated ? 'border-rose-500/30' : 'border-emerald-500/30'}`}
+                  className={`panel p-6 border ${result.is_ai_generated ? 'border-signal-500/30' : 'border-real-500/30'}`}
                 >
                   {/* Verdict */}
                   <div className="flex items-start justify-between mb-6">
                     <div>
-                      <div className="text-xs uppercase tracking-wider text-gray-500 font-semibold mb-2">Detection Result</div>
-                      <div className={`text-3xl font-bold flex items-center gap-2 ${result.is_ai_generated ? 'text-rose-400' : 'text-emerald-400'}`}>
+                      <div className="label mb-2">Verdict</div>
+                      <div className={`heading text-3xl flex items-center gap-2 ${result.is_ai_generated ? 'text-signal-400' : 'text-real-400'}`}>
                         {result.is_ai_generated ? <AlertTriangle size={28} /> : <CheckCircle size={28} />}
-                        {result.is_ai_generated ? 'AI Generated' : 'Genuine Image'}
+                        {result.is_ai_generated ? 'AI-generated' : 'Genuine image'}
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-3xl font-bold text-white">{confidence}%</div>
+                      <div className="num text-3xl text-bone">{confidence}%</div>
                       <div className="text-xs text-gray-500">Confidence</div>
                     </div>
                   </div>
 
                   {/* Confidence bar */}
                   <div className="mb-6">
-                    <div className="h-2 rounded-full bg-gray-800 overflow-hidden">
+                    <div className="h-1.5 rounded-sm bg-ink-950 overflow-hidden">
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${confidence}%` }}
                         transition={{ duration: 1, ease: 'easeOut' }}
-                        className={`h-full rounded-full ${result.is_ai_generated ? 'bg-gradient-to-r from-rose-500 to-rose-400' : 'bg-gradient-to-r from-emerald-500 to-emerald-400'}`}
+                        className={`h-full ${result.is_ai_generated ? 'bg-signal-500' : 'bg-real-400'}`}
                       />
                     </div>
                   </div>
 
                   {/* Explanation Visuals */}
                   {(result.explanation.saliency_png_base64 || result.explanation.frequency_map_png_base64) && (
-                    <div className="bg-black/30 rounded-xl p-4 mb-6 border border-white/5">
+                    <div className="well p-4 mb-6">
                       <div className="flex items-center justify-between mb-3">
-                        <span className="text-sm font-medium text-gray-300">Visual Explanation</span>
-                        <div className="flex bg-gray-800 p-0.5 rounded-lg">
+                        <span className="text-sm font-medium text-gray-300">Evidence</span>
+                        <div className="seg">
                           <button
-                            className={`px-3 py-1 text-xs rounded-md transition-colors ${viewMode === 'saliency' ? 'bg-blue-500 text-white' : 'text-gray-400 hover:text-white'}`}
+                            className={`seg-item ${viewMode === 'saliency' ? 'is-active' : ''}`}
                             onClick={() => setViewMode('saliency')}
                           >
                             Spatial
                           </button>
                           <button
-                            className={`px-3 py-1 text-xs rounded-md transition-colors ${viewMode === 'frequency' ? 'bg-blue-500 text-white' : 'text-gray-400 hover:text-white'}`}
+                            className={`seg-item ${viewMode === 'frequency' ? 'is-active' : ''}`}
                             onClick={() => setViewMode('frequency')}
                           >
                             Frequency
@@ -204,7 +200,7 @@ export default function Analyze() {
                         </div>
                       </div>
 
-                      <div className="flex justify-center bg-gray-900/50 rounded-lg overflow-hidden min-h-[200px]">
+                      <div className="flex justify-center overflow-hidden min-h-[200px]">
                         <img
                           src={viewMode === 'saliency' ? result.explanation.saliency_png_base64 : result.explanation.frequency_map_png_base64}
                           alt={viewMode === 'saliency' ? 'Saliency Map' : 'Frequency Map'}
@@ -222,28 +218,28 @@ export default function Analyze() {
                   {/* Model Breakdown */}
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
-                      <div className="text-xs text-gray-500 uppercase tracking-wider mb-2">Model Scores</div>
+                      <div className="text-xs text-gray-500 mb-2">Stream scores</div>
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm">
                           <span className="text-gray-400">Spatial CNN</span>
-                          <span className="text-white font-mono">{(result.scores.cnn * 100).toFixed(1)}%</span>
+                          <span className="text-bone font-mono">{(result.scores.cnn * 100).toFixed(1)}%</span>
                         </div>
                         <div className="flex justify-between text-sm">
                           <span className="text-gray-400">Frequency Net</span>
-                          <span className="text-white font-mono">{(result.scores.freq * 100).toFixed(1)}%</span>
+                          <span className="text-bone font-mono">{(result.scores.freq * 100).toFixed(1)}%</span>
                         </div>
                       </div>
                     </div>
                     <div>
-                      <div className="text-xs text-gray-500 uppercase tracking-wider mb-2">Diagnostics</div>
+                      <div className="text-xs text-gray-500 mb-2">Diagnostics</div>
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
                           <span className="text-gray-400">Latency</span>
-                          <span className="text-white font-mono">{result.inference_ms}ms</span>
+                          <span className="text-bone font-mono">{result.inference_ms}ms</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-gray-400">Model</span>
-                          <span className="text-white">{result.model_version}</span>
+                          <span className="text-bone">{result.model_version}</span>
                         </div>
                       </div>
                     </div>
@@ -262,7 +258,7 @@ export default function Analyze() {
                     onClick={() => navigate(`/results/${result.id}`)}
                     className="btn-secondary w-full mt-4 text-sm"
                   >
-                    View Full Report
+                    View full report
                   </button>
                 </motion.div>
               ) : (
@@ -270,11 +266,10 @@ export default function Analyze() {
                   key="empty"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="glass-card h-full min-h-[500px] flex items-center justify-center"
+                  className="h-full min-h-[320px] lg:min-h-[500px] flex items-center justify-center rounded-md border border-dashed border-line-strong"
                 >
                   <div className="text-center">
-                    <Shield size={48} className="text-gray-700 mx-auto mb-4" />
-                    <p className="text-gray-500">Upload an image to see detection results</p>
+                    <p className="text-gray-500">The report appears here once an image is analyzed.</p>
                   </div>
                 </motion.div>
               )}

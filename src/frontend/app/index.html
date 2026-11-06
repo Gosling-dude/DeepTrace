@@ -3,16 +3,32 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="DeepTrace — Advanced AI-generated image detection with hybrid deep learning and visual explainability. Detect synthetic images instantly." />
-    <meta name="theme-color" content="#0a0e1a" />
+    <meta name="description" content="DeepTrace reads images and video in two domains at once, pixels and frequency spectrum, and shows where the synthetic artifacts are." />
+    <meta name="theme-color" content="#F0EEE8" />
+    <meta name="color-scheme" content="light dark" />
     <meta name="robots" content="index, follow" />
-    <meta property="og:title" content="DeepTrace — AI Image Detection Platform" />
-    <meta property="og:description" content="Detect AI-generated images with hybrid deep learning and visual explainability." />
+    <meta property="og:title" content="DeepTrace — Image & video forensics" />
+    <meta property="og:description" content="Detect AI-generated images and deepfake video with a two-stream model and visual explanations." />
     <meta property="og:type" content="website" />
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>" />
-    <title>DeepTrace — AI Image Detection Platform</title>
+    <script>
+      // Pick the theme before first paint. Mirrors initTheme() in src/theme.ts.
+      (function () {
+        var theme = 'paper';
+        try {
+          var saved = localStorage.getItem('deeptrace-theme');
+          var dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          theme = ['paper', 'graphite', 'forest', 'cobalt'].indexOf(saved) >= 0 ? saved : dark ? 'graphite' : 'paper';
+        } catch (e) {}
+        document.documentElement.dataset.theme = theme;
+      })();
+    </script>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23141413'/><circle cx='16' cy='16' r='8.5' fill='none' stroke='%23ede9df' stroke-width='2'/><circle cx='22' cy='10' r='3.2' fill='%23ff4f1f'/></svg>" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Martian+Mono:wdth,wght@75..112.5,300..600&display=swap" rel="stylesheet" />
+    <title>DeepTrace — Image & video forensics</title>
   </head>
-  <body class="min-h-screen" style="background-color: #0a0e1a; color: #f1f5f9;">
+  <body class="min-h-screen">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

@@ -28,8 +28,8 @@ function ProtectedRoute() {
 
   if (!isInitialized) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-dvh flex items-center justify-center">
+        <div className="spinner" />
       </div>
     );
   }
@@ -47,8 +47,8 @@ function AdminRoute() {
 
   if (!isInitialized) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-dvh flex items-center justify-center">
+        <div className="spinner" />
       </div>
     );
   }
@@ -70,8 +70,8 @@ function GuestRoute() {
 
   if (!isInitialized) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-dvh flex items-center justify-center">
+        <div className="spinner" />
       </div>
     );
   }
@@ -92,7 +92,7 @@ function App() {
 
   return (
     <BrowserRouter>
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-dvh flex flex-col">
         <Navbar />
 
         <main className="flex-1">
@@ -138,14 +138,14 @@ function App() {
         position="top-right"
         toastOptions={{
           style: {
-            background: '#1a1f35',
-            color: '#f1f5f9',
-            border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: '12px',
+            background: 'var(--panel)',
+            color: 'var(--bone)',
+            border: '1px solid var(--line-strong)',
+            borderRadius: '4px',
             fontSize: '14px',
           },
-          success: { iconTheme: { primary: '#10b981', secondary: '#fff' } },
-          error: { iconTheme: { primary: '#f43f5e', secondary: '#fff' } },
+          success: { iconTheme: { primary: 'var(--real)', secondary: 'var(--well)' } },
+          error: { iconTheme: { primary: 'var(--signal)', secondary: 'var(--well)' } },
         }}
       />
     </BrowserRouter>

@@ -1,11 +1,9 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAuthStore } from '../../store/authStore';
-import {
-  Menu, X, Shield, Upload, History, BarChart3,
-  User, LogOut, LayoutDashboard, ChevronDown,
-} from 'lucide-react';
+import { Menu, X, ChevronDown } from 'lucide-react';
+import Logo from '../Logo';
+import ThemeMenu from '../ThemeMenu';
 
 export default function Navbar() {
   const { user, isAuthenticated, logout } = useAuthStore();
@@ -13,6 +11,37 @@ export default function Navbar() {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
+
+  // Over the landing hero the bar is transparent until the page scrolls.
+  const overHero = location.pathname === '/' && !scrolled && !mobileOpen;
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 24);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  useEffect(() => {
+    setMobileOpen(false);
+    setProfileOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!profileOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (!profileRef.current?.contains(e.target as Node)) setProfileOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setProfileOpen(false);
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [profileOpen]);
 
   const handleLogout = () => {
     logout();
@@ -21,162 +50,141 @@ export default function Navbar() {
   };
 
   const isActive = (path: string) =>
-    path === '/analyze' ? location.pathname.startsWith('/analyze') : location.pathname === path;
+    path === '/analyze' || path === '/admin'
+      ? location.pathname.startsWith(path)
+      : location.pathname === path;
 
   const navLinks = isAuthenticated
     ? [
-        { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-        { to: '/analyze', label: 'Analyze', icon: Upload },
-        { to: '/history', label: 'History', icon: History },
+        { to: '/dashboard', label: 'Dashboard' },
+        { to: '/analyze', label: 'Analyze' },
+        { to: '/history', label: 'History' },
+        ...(user?.role === 'admin' ? [{ to: '/admin', label: 'Admin' }] : []),
       ]
     : [];
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/5" style={{ background: 'rgba(10, 14, 26, 0.85)', backdropFilter: 'blur(20px)' }}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <Link to={isAuthenticated ? '/dashboard' : '/'} className="flex items-center gap-2.5 group">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)' }}>
-              <Shield className="w-4.5 h-4.5 text-white" size={18} />
-            </div>
-            <span className="text-lg font-bold text-white group-hover:text-blue-400 transition-colors">
-              DeepTrace
-            </span>
-          </Link>
+    <nav
+      className={`fixed top-0 inset-x-0 z-50 border-b transition-[background-color,border-color] duration-300 ${
+        overHero ? 'border-transparent bg-transparent' : 'border-line bg-ink-900/90 backdrop-blur-md'
+      }`}
+      style={{ ['--logo-gap' as string]: overHero ? 'var(--well)' : 'var(--ground)' }}
+    >
+      <div className="max-w-7xl mx-auto px-5 sm:px-8">
+        <div className="flex items-center justify-between h-14">
+          <div className="flex items-center gap-8">
+            <Link to={isAuthenticated ? '/dashboard' : '/'} aria-label="DeepTrace home" className="flex items-center">
+              <Logo />
+            </Link>
 
-          {/* Desktop Nav */}
-          <div className="hidden md:flex items-center gap-1">
-            {navLinks.map(({ to, label, icon: Icon }) => (
-              <Link
-                key={to}
-                to={to}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200
-                  ${isActive(to) ? 'text-white bg-white/10' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
-              >
-                <Icon size={16} />
-                {label}
-              </Link>
-            ))}
-            {isAuthenticated && user?.role === 'admin' && (
-              <Link
-                to="/admin"
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200
-                  ${location.pathname.startsWith('/admin') ? 'text-amber-400 bg-amber-400/10' : 'text-amber-400/70 hover:text-amber-400 hover:bg-amber-400/5'}`}
-              >
-                <BarChart3 size={16} />
-                Admin
-              </Link>
-            )}
+            {/* Desktop nav */}
+            <div className="hidden md:flex items-stretch h-14">
+              {navLinks.map(({ to, label }) => (
+                <Link
+                  key={to}
+                  to={to}
+                  aria-current={isActive(to) ? 'page' : undefined}
+                  className={`relative flex items-center px-3 text-sm font-medium transition-colors ${
+                    isActive(to) ? 'text-bone' : 'text-bone-mute hover:text-bone'
+                  }`}
+                >
+                  {label}
+                  {isActive(to) && <span className="absolute inset-x-3 -bottom-px h-px bg-bone" />}
+                </Link>
+              ))}
+            </div>
           </div>
 
-          {/* Right side */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <ThemeMenu />
             {isAuthenticated ? (
-              <div className="relative">
+              <div className="relative" ref={profileRef}>
                 <button
                   onClick={() => setProfileOpen(!profileOpen)}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm text-gray-300 hover:text-white hover:bg-white/5 transition-all"
+                  aria-haspopup="menu"
+                  aria-expanded={profileOpen}
+                  className="flex items-center gap-2 h-9 pl-1 pr-2 rounded text-sm text-bone-dim hover:text-bone transition-colors"
                 >
-                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)' }}>
+                  <span className="w-7 h-7 rounded-sm bg-bone text-ink-950 flex items-center justify-center text-xs font-semibold">
                     {user?.full_name?.charAt(0).toUpperCase() || 'U'}
-                  </div>
+                  </span>
                   <span className="hidden sm:inline">{user?.full_name?.split(' ')[0]}</span>
-                  <ChevronDown size={14} className={`transition-transform ${profileOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown size={14} className={`transition-transform duration-200 ${profileOpen ? 'rotate-180' : ''}`} />
                 </button>
 
-                <AnimatePresence>
-                  {profileOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 8, scale: 0.96 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 8, scale: 0.96 }}
-                      transition={{ duration: 0.15 }}
-                      className="absolute right-0 mt-2 w-56 rounded-xl overflow-hidden border border-white/10 shadow-2xl"
-                      style={{ background: '#1a1f35' }}
-                    >
-                      <div className="px-4 py-3 border-b border-white/5">
-                        <p className="text-sm font-medium text-white">{user?.full_name}</p>
-                        <p className="text-xs text-gray-400 truncate">{user?.email}</p>
-                      </div>
-                      <div className="py-1">
-                        <Link
-                          to="/profile"
-                          onClick={() => setProfileOpen(false)}
-                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:text-white hover:bg-white/5 transition-colors"
-                        >
-                          <User size={15} /> Profile & Settings
-                        </Link>
-                        <button
-                          onClick={handleLogout}
-                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-400 hover:text-red-300 hover:bg-red-400/5 transition-colors"
-                        >
-                          <LogOut size={15} /> Sign Out
-                        </button>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                {profileOpen && (
+                  <div
+                    role="menu"
+                    style={{ boxShadow: 'var(--shadow-pop)' }}
+                    className="absolute right-0 mt-2 w-60 rounded-md border border-line-strong bg-ink-850 origin-top-right animate-[menu-in_0.16s_cubic-bezier(0.16,1,0.3,1)]"
+                  >
+                    <div className="px-4 py-3 border-b border-line">
+                      <p className="text-sm font-medium text-bone truncate">{user?.full_name}</p>
+                      <p className="text-xs text-bone-mute truncate">{user?.email}</p>
+                    </div>
+                    <div className="p-1">
+                      <Link
+                        to="/profile"
+                        role="menuitem"
+                        className="block px-3 py-2 rounded-sm text-sm text-bone-dim hover:text-bone hover:bg-bone/5 transition-colors"
+                      >
+                        Profile and settings
+                      </Link>
+                      <button
+                        onClick={handleLogout}
+                        role="menuitem"
+                        className="w-full text-left px-3 py-2 rounded-sm text-sm text-bone-dim hover:text-bone hover:bg-bone/5 transition-colors"
+                      >
+                        Sign out
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
-              <div className="flex items-center gap-2">
-                <Link to="/login" className="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white transition-colors">
-                  Sign In
+              <div className="flex items-center gap-1">
+                <Link to="/login" className="hidden sm:inline-flex items-center h-9 px-3 text-sm font-medium text-bone-dim hover:text-bone transition-colors">
+                  Sign in
                 </Link>
-                <Link to="/signup" className="btn-primary !px-4 !py-2 text-sm">
-                  Get Started
+                <Link to="/signup" className="btn-secondary btn-sm">
+                  Create account
                 </Link>
               </div>
             )}
 
-            {/* Mobile Menu Toggle */}
-            <button
-              onClick={() => setMobileOpen(!mobileOpen)}
-              className="md:hidden p-2 text-gray-400 hover:text-white transition-colors"
-            >
-              {mobileOpen ? <X size={20} /> : <Menu size={20} />}
-            </button>
+            {navLinks.length > 0 && (
+              <button
+                onClick={() => setMobileOpen(!mobileOpen)}
+                aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+                aria-expanded={mobileOpen}
+                className="md:hidden w-10 h-10 -mr-2 flex items-center justify-center text-bone-dim hover:text-bone transition-colors"
+              >
+                {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+              </button>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Mobile Nav */}
-      <AnimatePresence>
-        {mobileOpen && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="md:hidden overflow-hidden border-t border-white/5"
-            style={{ background: 'rgba(10, 14, 26, 0.95)' }}
-          >
-            <div className="px-4 py-3 space-y-1">
-              {navLinks.map(({ to, label, icon: Icon }) => (
-                <Link
-                  key={to}
-                  to={to}
-                  onClick={() => setMobileOpen(false)}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors
-                    ${isActive(to) ? 'text-white bg-white/10' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
-                >
-                  <Icon size={16} />
-                  {label}
-                </Link>
-              ))}
-              {isAuthenticated && user?.role === 'admin' && (
-                <Link
-                  to="/admin"
-                  onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-amber-400/70 hover:text-amber-400"
-                >
-                  <BarChart3 size={16} />
-                  Admin Panel
-                </Link>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Mobile nav */}
+      {mobileOpen && (
+        <div className="md:hidden border-t border-line bg-ink-900">
+          <div className="px-5 py-2">
+            {navLinks.map(({ to, label }) => (
+              <Link
+                key={to}
+                to={to}
+                aria-current={isActive(to) ? 'page' : undefined}
+                className={`flex items-center min-h-[44px] text-base border-b border-line last:border-b-0 ${
+                  isActive(to) ? 'text-bone font-medium' : 'text-bone-dim'
+                }`}
+              >
+                {label}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
     </nav>
   );
 }
